@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+
+  <style type="text/css">
+    @font-face {
+     font-family: "AirbnbCereal";
+     src: url("./AirbnbCereal-Light.ttf");
+    }
+    body {
+      background: black;
+      color: white;
+      font-family: "AirbnbCereal"
+    }
+    #content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%);
+    }
+    #clock {
+      font-size: 18em;
+    }
+    #weather {
+      transform: translateY(-30%);
+      text-align: end;
+      font-size: 4em;
+    }
+    #weather-city {
+      font-size: 0.75em;
+    }
+    #weather-desc {
+      transform: translateY(-25%);
+      font-size: 0.75em;
+    }
+    #weather-icon {
+      vertical-align: middle;
+      filter: invert(100%) sepia(93%) saturate(0%) hue-rotate(294deg) brightness(104%) contrast(101%);
+    }
+    #weather-temp sup {
+      font-size: 0.5em;
+    }
+    #footer {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: grey;
+      font-size: 1.25em;
+    }
+  </style>
+
+  <script type="text/javascript" src="api_key.js"></script>
+  <script>
+    function init() {
+      // Clock
+      startTime();
+
+      var hide = getParam("hide", "");
+
+      // Weather
+      // Disable weather
+      if(hide.includes("weather")) {
+        document.getElementById("weather").style.display = "none";
+        return;
+      }
+      if(hide.includes("city")) document.getElementById("weather-city").style.display = "none";
+      if(hide.includes("icon")) document.getElementById("weather-desc").style.display = "none";
+      if(hide.includes("temp")) document.getElementById("weather-desc").style.display = "none";
+      if(hide.includes("desc")) document.getElementById("weather-desc").style.display = "none";
+      displayWeather(getParam("city", "epinal"));
+
+      // Footer
+      if(hide.includes("footer")) document.getElementById("footer").style.display = "none";
+    }
+
+    function getParam(name, def_value = null) {
+      var result = def_value, tmp = [];
+      location.search
+        .substr(1)
+        .split("&")
+        .forEach(function (item) {
+          tmp = item.split("=");
+          if (tmp[0] === name) result = decodeURIComponent(tmp[1]);
+        });
+      return result;
+    }
+
+    function startTime() {
+      var now = new Date();
+      var h = checkTime(now.getHours());
+      var m = checkTime(now.getMinutes());
+      document.getElementById("hh").innerHTML = h;
+      document.getElementById("mm").innerHTML = m;
+
+      setTimeout(startTime, 500);
+    }
+
+    function checkTime(i) {
+      if (i < 10) {
+        i = "0" + i
+      };
+      return i;
+    }
+
+    function displayWeather(city) {
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=fr`;
+      fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        const { main, name, sys, weather } = data;
+        const icon = `https://s3-us-west-2.amazonaws.com/s.cdpn.io/162656/${weather[0]["icon"]}.svg`;
+        document.getElementById("weather-icon").src = icon;
+        document.getElementById("weather-city").innerHTML = name;
+        document.getElementById("weather-temp-value").innerHTML = Math.round(main.temp);
+        document.getElementById("weather-desc").innerHTML = weather[0]["description"];
+
+        setTimeout(function() {
+          displayWeather(city)
+        }, 1000 * 60 * 15);
+      })
+      .catch(() => {
+        console.log("Invalid city " + city)
+      });
+
+    }
+  </script>
+</head>
+
+<body onload="init()">
+
+  <div id="content">
+    <div id="clock">
+      <span id="hh"></span>:<span id="mm"></span>
+    </div>
+
+    <div id="weather">
+      <div id="weather-city"></div>
+      <div id="weather-content">
+        <img id="weather-icon" src="" alt="icon">
+        <span id="weather-temp"><span id="weather-temp-value"></span><sup>°C</sup></span>
+      </div>
+      <div id="weather-desc"></div>
+    </div>
+  </div>
+
+  <div id="footer">Click here to close</div>
+
+</body>
+</html>
